@@ -76,7 +76,7 @@ function applyAsyncPii(segments: TextSegment[], asyncPiiItems: string[]): TextSe
       result.push(segment);
     } else {
       // Check if any async PII items are in this segment
-      let currentText = segment.content;
+      const currentText = segment.content;
       let hasAsyncPii = false;
 
       for (const piiText of asyncPiiItems) {

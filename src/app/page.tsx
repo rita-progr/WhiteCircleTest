@@ -29,7 +29,6 @@ export default function Home() {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
   const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
-  const [isHydrated, setIsHydrated] = useState(false);
 
   // Restore activeChatId from localStorage after hydration
   useEffect(() => {
@@ -37,7 +36,6 @@ export default function Home() {
     if (savedChatId) {
       setActiveChatId(savedChatId);
     }
-    setIsHydrated(true);
   }, []);
 
   // SWR for chat list - cached and revalidated automatically
