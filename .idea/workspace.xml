@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="720d0aef-cc40-4597-90ac-922a87a39402" name="Changes" comment="add scroll to current message" />
+    <list default="true" id="720d0aef-cc40-4597-90ac-922a87a39402" name="Changes" comment="add ipv6" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -63,7 +63,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1770356480683</updated>
-      <workItem from="1770356481769" duration="19950000" />
+      <workItem from="1770356481769" duration="20250000" />
     </task>
     <task id="LOCAL-00001" summary="init app">
       <option name="closed" value="true" />
@@ -153,7 +153,15 @@
       <option name="project" value="LOCAL" />
       <updated>1770383486192</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="add ipv6">
+      <option name="closed" value="true" />
+      <created>1770383939354</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1770383939354</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -170,6 +178,7 @@
     <MESSAGE value="add spoiled library" />
     <MESSAGE value="add internatianal phones" />
     <MESSAGE value="add scroll to current message" />
-    <option name="LAST_COMMIT_MESSAGE" value="add scroll to current message" />
+    <MESSAGE value="add ipv6" />
+    <option name="LAST_COMMIT_MESSAGE" value="add ipv6" />
   </component>
 </project>
