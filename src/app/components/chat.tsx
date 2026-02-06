@@ -134,6 +134,12 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
               .map((part) => part.text)
               .join('');
 
+            // Check if this is the last assistant message and still streaming
+            const isLastAssistantMessage =
+              message.role === 'assistant' &&
+              index === messages.length - 1;
+            const isMessageStreaming = isLastAssistantMessage && status === 'streaming';
+
             return (
               <div
                 key={`${message.id}-${index}`}
@@ -147,6 +153,7 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
                   <ChatMessage
                     content={messageContent}
                     role={message.role as 'user' | 'assistant'}
+                    isStreaming={isMessageStreaming}
                   />
                 </div>
               </div>

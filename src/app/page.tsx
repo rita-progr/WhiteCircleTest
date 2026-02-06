@@ -26,14 +26,19 @@ const fetcher = (url: string) => fetch(url).then((res) => {
 });
 
 export default function Home() {
-  const [activeChatId, setActiveChatId] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('activeChatId');
-    }
-    return null;
-  });
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
   const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Restore activeChatId from localStorage after hydration
+  useEffect(() => {
+    const savedChatId = localStorage.getItem('activeChatId');
+    if (savedChatId) {
+      setActiveChatId(savedChatId);
+    }
+    setIsHydrated(true);
+  }, []);
 
   // SWR for chat list - cached and revalidated automatically
   const {

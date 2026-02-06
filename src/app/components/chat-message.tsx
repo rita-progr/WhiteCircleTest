@@ -2,11 +2,13 @@
 
 import { useMemo } from 'react';
 import { detectPIIInstant, splitTextWithPII, type TextSegment } from '@/lib/pii-patterns';
+import { useAsyncPiiDetection } from '@/lib/hooks/use-async-pii-detection';
 import { Spoiler } from './spoiler';
 
 interface ChatMessageProps {
   content: string;
   role: 'user' | 'assistant';
+  isStreaming?: boolean;
 }
 
 /**
@@ -61,21 +63,94 @@ function applyRegexFallback(segments: TextSegment[]): TextSegment[] {
   return result;
 }
 
-export function ChatMessage({ content, role }: ChatMessageProps) {
+/**
+ * Apply async PII detection results to text segments
+ */
+function applyAsyncPii(segments: TextSegment[], asyncPiiItems: string[]): TextSegment[] {
+  if (asyncPiiItems.length === 0) return segments;
+
+  const result: TextSegment[] = [];
+
+  for (const segment of segments) {
+    if (segment.type === 'pii') {
+      result.push(segment);
+    } else {
+      // Check if any async PII items are in this segment
+      let currentText = segment.content;
+      let hasAsyncPii = false;
+
+      for (const piiText of asyncPiiItems) {
+        if (currentText.includes(piiText)) {
+          hasAsyncPii = true;
+          break;
+        }
+      }
+
+      if (hasAsyncPii) {
+        // Split by async PII items
+        const subSegments: TextSegment[] = [];
+        let remaining = currentText;
+
+        while (remaining.length > 0) {
+          let earliestMatch: { text: string; index: number } | null = null;
+
+          for (const piiText of asyncPiiItems) {
+            const idx = remaining.indexOf(piiText);
+            if (idx !== -1 && (earliestMatch === null || idx < earliestMatch.index)) {
+              earliestMatch = { text: piiText, index: idx };
+            }
+          }
+
+          if (earliestMatch) {
+            if (earliestMatch.index > 0) {
+              subSegments.push({ type: 'text', content: remaining.slice(0, earliestMatch.index) });
+            }
+            subSegments.push({ type: 'pii', content: earliestMatch.text });
+            remaining = remaining.slice(earliestMatch.index + earliestMatch.text.length);
+          } else {
+            subSegments.push({ type: 'text', content: remaining });
+            break;
+          }
+        }
+
+        result.push(...subSegments);
+      } else {
+        result.push(segment);
+      }
+    }
+  }
+
+  return result;
+}
+
+export function ChatMessage({ content, role, isStreaming = false }: ChatMessageProps) {
   // Only scan assistant messages for PII
   const shouldScan = role === 'assistant';
+
+  // Async PII detection with Haiku (runs in parallel)
+  const { asyncPiiItems } = useAsyncPiiDetection(
+    shouldScan ? content : '',
+    isStreaming
+  );
 
   const segments = useMemo(() => {
     if (!shouldScan || !content) {
       return [{ type: 'text' as const, content }];
     }
 
+    console.log('🎯 ChatMessage asyncPiiItems:', asyncPiiItems);
+
     // First: parse LLM-tagged PII
     const taggedSegments = parsePIITags(content);
 
     // Second: apply regex fallback for any missed PII
-    return applyRegexFallback(taggedSegments);
-  }, [content, shouldScan]);
+    const withRegex = applyRegexFallback(taggedSegments);
+
+    // Third: apply async Haiku detection results
+    const final = applyAsyncPii(withRegex, asyncPiiItems);
+    console.log('🎯 Final segments:', final);
+    return final;
+  }, [content, shouldScan, asyncPiiItems]);
 
   // For user messages, just render the content directly
   if (!shouldScan) {

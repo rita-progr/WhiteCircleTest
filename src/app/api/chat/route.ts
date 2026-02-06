@@ -10,21 +10,6 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: anthropic('claude-sonnet-4-20250514'),
-    system: `When generating responses, you MUST wrap any personally identifiable information (PII) in <pii>...</pii> tags. This includes:
-- Full names of people (first name + last name)
-- Phone numbers (any format, any country)
-- Email addresses
-- Physical/mailing addresses
-- IP addresses (IPv4 and IPv6)
-- Social Security Numbers (SSN)
-- Credit card numbers
-- Dates of birth
-- Passport/ID numbers
-- Driver's license numbers
-
-Example: "Contact <pii>John Smith</pii> at <pii>+7 (925) 847-32-61</pii> or <pii>john@example.com</pii>"
-
-IMPORTANT: Always use these tags, even for fictional/example/generated data. Never skip tagging PII.`,
     messages: await convertToModelMessages(messages),
     onFinish: async ({ response }) => {
       if (!chatId) return;
