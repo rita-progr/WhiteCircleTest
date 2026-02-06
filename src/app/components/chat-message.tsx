@@ -1,13 +1,12 @@
 'use client';
 
-import { useStreamingPII } from '@/lib/hooks/use-streaming-pii';
+import { useMemo } from 'react';
+import { detectPIIInstant, splitTextWithPII, type PIIType } from '@/lib/pii-patterns';
 import { Spoiler } from './spoiler';
-import type { PIIType } from '@/lib/pii-scanner';
 
 interface ChatMessageProps {
   content: string;
   role: 'user' | 'assistant';
-  isStreaming?: boolean;
 }
 
 const PII_LABELS: Record<PIIType, string> = {
@@ -15,22 +14,22 @@ const PII_LABELS: Record<PIIType, string> = {
   phone: 'Phone',
   card: 'Card',
   ssn: 'SSN',
-  name: 'Name',
-  address: 'Address',
-  dob: 'DOB',
   ip: 'IP',
 };
 
-export function ChatMessage({ content, role, isStreaming = false }: ChatMessageProps) {
+export function ChatMessage({ content, role }: ChatMessageProps) {
   // Only scan assistant messages for PII
   const shouldScan = role === 'assistant';
 
-  const { segments, isScanning, piiCount } = useStreamingPII({
-    text: shouldScan ? content : '',
-    isStreaming: shouldScan && isStreaming,
-  });
+  // Memoized synchronous PII detection - runs instantly on every content change
+  const segments = useMemo(() => {
+    if (!shouldScan || !content) {
+      return [{ type: 'text' as const, content }];
+    }
 
-  console.log('[ChatMessage] PII count:', piiCount, 'segments:', segments.length);
+    const piiItems = detectPIIInstant(content);
+    return splitTextWithPII(content, piiItems);
+  }, [content, shouldScan]);
 
   // For user messages, just render the content directly
   if (!shouldScan) {
@@ -41,14 +40,14 @@ export function ChatMessage({ content, role, isStreaming = false }: ChatMessageP
     );
   }
 
-  // For assistant messages, render with PII protection
+  // For assistant messages, render with instant PII protection
   return (
     <p className="whitespace-pre-wrap text-sm text-neutral-100">
       {segments.map((segment, index) => {
         if (segment.type === 'pii') {
           return (
             <Spoiler
-              key={`pii-${index}-${segment.content.slice(0, 10)}`}
+              key={`pii-${index}-${segment.content.slice(0, 5)}`}
               label={segment.piiType ? PII_LABELS[segment.piiType] : 'PII'}
             >
               {segment.content}
@@ -57,9 +56,6 @@ export function ChatMessage({ content, role, isStreaming = false }: ChatMessageP
         }
         return <span key={`text-${index}`}>{segment.content}</span>;
       })}
-      {isScanning && (
-        <span className="ml-1 inline-block h-2 w-2 animate-pulse rounded-full bg-neutral-500" />
-      )}
     </p>
   );
 }
