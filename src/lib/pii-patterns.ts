@@ -21,8 +21,18 @@ const PII_PATTERNS: { type: PIIType; pattern: RegExp }[] = [
   { type: 'ssn', pattern: /\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b/g },
   // Credit card (basic pattern)
   { type: 'card', pattern: /\b(?:\d{4}[-\s]?){3}\d{4}\b/g },
-  // IP addresses
+  // IPv4 addresses
   { type: 'ip', pattern: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g },
+  // IPv6 addresses - comprehensive pattern
+  { type: 'ip', pattern: /(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}(?:%[a-zA-Z0-9]+)?/g },
+  { type: 'ip', pattern: /(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}(?:%[a-zA-Z0-9]+)?/g },
+  { type: 'ip', pattern: /(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}(?:%[a-zA-Z0-9]+)?/g },
+  { type: 'ip', pattern: /(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}(?:%[a-zA-Z0-9]+)?/g },
+  { type: 'ip', pattern: /(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}(?:%[a-zA-Z0-9]+)?/g },
+  { type: 'ip', pattern: /(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}(?:%[a-zA-Z0-9]+)?/g },
+  { type: 'ip', pattern: /[0-9a-fA-F]{1,4}:(?::[0-9a-fA-F]{1,4}){1,6}(?:%[a-zA-Z0-9]+)?/g },
+  { type: 'ip', pattern: /:(?::[0-9a-fA-F]{1,4}){1,7}(?:%[a-zA-Z0-9]+)?/g },
+  { type: 'ip', pattern: /::1(?:%[a-zA-Z0-9]+)?(?=\s|$|[^\w:])/g },
 ];
 
 /**
