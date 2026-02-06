@@ -13,8 +13,10 @@ export interface PIIMatch {
 const PII_PATTERNS: { type: PIIType; pattern: RegExp }[] = [
   // Email
   { type: 'email', pattern: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g },
-  // Phone numbers (various formats)
-  { type: 'phone', pattern: /(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}/g },
+  // Phone numbers - international format (+7, +1, +44, etc.)
+  { type: 'phone', pattern: /\+\d{1,3}[-.\s]?\(?\d{2,4}\)?[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{0,4}/g },
+  // Phone numbers - US format without +
+  { type: 'phone', pattern: /\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}/g },
   // SSN
   { type: 'ssn', pattern: /\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b/g },
   // Credit card (basic pattern)
