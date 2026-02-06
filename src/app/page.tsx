@@ -21,12 +21,27 @@ interface ChatWithMessages extends ChatItem {
 
 export default function Home() {
   const [chats, setChats] = useState<ChatItem[]>([]);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [activeChatId, setActiveChatId] = useState<string | null>(() => {
+    // Restore from localStorage on initial load
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('activeChatId');
+    }
+    return null;
+  });
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
+
+  // Save activeChatId to localStorage
+  useEffect(() => {
+    if (activeChatId) {
+      localStorage.setItem('activeChatId', activeChatId);
+    } else {
+      localStorage.removeItem('activeChatId');
+    }
+  }, [activeChatId]);
 
   const loadChats = useCallback(async () => {
     setIsLoadingChats(true);
@@ -47,6 +62,21 @@ export default function Home() {
   useEffect(() => {
     loadChats();
   }, [loadChats]);
+
+  // Load messages for saved active chat after chats are loaded
+  useEffect(() => {
+    if (!isLoadingChats && activeChatId && chats.length > 0) {
+      // Check if the saved chat still exists
+      const chatExists = chats.some((c) => c.id === activeChatId);
+      if (chatExists && initialMessages.length === 0) {
+        handleSelectChat(activeChatId);
+      } else if (!chatExists) {
+        // Chat was deleted, clear the saved ID
+        setActiveChatId(null);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoadingChats, chats]);
 
   const handleNewChat = async () => {
     setError(null);
