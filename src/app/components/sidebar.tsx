@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, Plus, Trash2, X } from 'lucide-react';
+import { AlertCircle, Loader2, Menu, MessageSquare, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +17,9 @@ interface SidebarProps {
   onSelectChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
   isLoading?: boolean;
+  deletingChatId?: string | null;
+  error?: string | null;
+  onRetry?: () => void;
 }
 
 export function Sidebar({
@@ -26,6 +29,9 @@ export function Sidebar({
   onSelectChat,
   onDeleteChat,
   isLoading = false,
+  deletingChatId = null,
+  error = null,
+  onRetry,
 }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -60,7 +66,22 @@ export function Sidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto p-2">
-        {isLoading ? (
+        {error ? (
+          // Error state
+          <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+            <AlertCircle className="h-8 w-8 text-red-400" />
+            <p className="text-sm text-neutral-400">{error}</p>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="flex items-center gap-2 rounded-lg bg-neutral-800 px-3 py-1.5 text-sm text-neutral-200 transition-colors hover:bg-neutral-700"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Retry
+              </button>
+            )}
+          </div>
+        ) : isLoading ? (
           // Skeleton loading
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-center gap-2 rounded-lg px-3 py-2">
@@ -71,13 +92,21 @@ export function Sidebar({
               </div>
             </div>
           ))
+        ) : chats.length === 0 ? (
+          // Empty state
+          <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+            <MessageSquare className="h-8 w-8 text-neutral-600" />
+            <p className="text-sm text-neutral-500">No chats yet</p>
+            <p className="text-xs text-neutral-600">Click + to start a new conversation</p>
+          </div>
         ) : (
           chats.map((chat) => (
             <div
               key={chat.id}
               className={cn(
                 'group flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-neutral-800',
-                activeChatId === chat.id && 'bg-neutral-800'
+                activeChatId === chat.id && 'bg-neutral-800',
+                deletingChatId === chat.id && 'opacity-50 pointer-events-none'
               )}
               onClick={() => {
                 onSelectChat(chat.id);
@@ -94,9 +123,14 @@ export function Sidebar({
                   e.stopPropagation();
                   onDeleteChat(chat.id);
                 }}
-                className="rounded p-1 opacity-0 transition-opacity hover:bg-neutral-700 group-hover:opacity-100"
+                disabled={deletingChatId === chat.id}
+                className="rounded p-1 opacity-0 transition-opacity hover:bg-neutral-700 group-hover:opacity-100 disabled:opacity-100"
               >
-                <Trash2 className="h-3.5 w-3.5 text-neutral-400" />
+                {deletingChatId === chat.id ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-neutral-400" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5 text-neutral-400" />
+                )}
               </button>
             </div>
           ))

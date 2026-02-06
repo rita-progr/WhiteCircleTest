@@ -2,7 +2,7 @@
 
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { ArrowUp, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowUp, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { UIMessage } from 'ai';
 import { ChatMessage } from './chat-message';
@@ -19,6 +19,8 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
   const [input, setInput] = useState('');
   const [localChatId, setLocalChatId] = useState<string | null>(chatId);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
   const pendingMessageRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -36,10 +38,17 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
     [localChatId]
   );
 
-  const { messages, sendMessage, status, setMessages } = useChat({
+  const { messages, sendMessage, status, setMessages, error: chatError } = useChat({
     id: localChatId ?? 'new-chat',
     transport,
   });
+
+  // Handle chat errors
+  useEffect(() => {
+    if (chatError) {
+      setSendError('Failed to send message. Please try again.');
+    }
+  }, [chatError]);
 
   // Set initial messages when initialMessages change
   useEffect(() => {
@@ -69,6 +78,8 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
 
     const messageText = input;
     setInput('');
+    setSendError(null);
+    setLastFailedMessage(null);
 
     if (!localChatId && onCreateChat) {
       setIsCreatingChat(true);
@@ -76,6 +87,10 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
       try {
         const newChatId = await onCreateChat();
         setLocalChatId(newChatId);
+      } catch {
+        setSendError('Failed to create chat. Please try again.');
+        setLastFailedMessage(messageText);
+        setInput(messageText);
       } finally {
         setIsCreatingChat(false);
       }
@@ -84,8 +99,22 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
 
     if (!localChatId) return;
 
-    sendMessage({ text: messageText });
-    onMessageSent?.();
+    try {
+      setLastFailedMessage(messageText);
+      await sendMessage({ text: messageText });
+      setLastFailedMessage(null);
+      onMessageSent?.();
+    } catch {
+      setSendError('Failed to send message. Please try again.');
+      setInput(messageText);
+    }
+  };
+
+  const handleRetry = () => {
+    if (lastFailedMessage) {
+      setInput(lastFailedMessage);
+      setSendError(null);
+    }
   };
 
   return (
@@ -128,6 +157,22 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
       </div>
 
       <div className="p-4">
+        {sendError && (
+          <div className="mx-auto mb-3 flex max-w-2xl items-center justify-between rounded-lg bg-red-900/30 px-4 py-2 text-sm text-red-300">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              {sendError}
+            </div>
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="flex items-center gap-1 rounded bg-red-800/50 px-2 py-1 text-xs transition-colors hover:bg-red-800"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Retry
+            </button>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="mx-auto max-w-2xl">
           <div className="flex items-center gap-2 rounded-full border border-neutral-700 bg-neutral-900 px-4 py-2">
             <input

@@ -25,13 +25,23 @@ export default function Home() {
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
 
   const loadChats = useCallback(async () => {
     setIsLoadingChats(true);
-    const res = await fetch('/api/chats');
-    const data = await res.json();
-    setChats(data);
-    setIsLoadingChats(false);
+    setError(null);
+    try {
+      const res = await fetch('/api/chats');
+      if (!res.ok) throw new Error('Failed to load chats');
+      const data = await res.json();
+      setChats(data);
+    } catch (err) {
+      setError('Failed to load chats. Please try again.');
+      console.error(err);
+    } finally {
+      setIsLoadingChats(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -39,46 +49,80 @@ export default function Home() {
   }, [loadChats]);
 
   const handleNewChat = async () => {
-    const res = await fetch('/api/chats', { method: 'POST' });
-    const newChat = await res.json();
-    setChats((prev) => [newChat, ...prev]);
-    setActiveChatId(newChat.id);
-    setInitialMessages([]);
-    return newChat.id;
+    setError(null);
+    try {
+      const res = await fetch('/api/chats', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to create chat');
+      const newChat = await res.json();
+      setChats((prev) => [newChat, ...prev]);
+      setActiveChatId(newChat.id);
+      setInitialMessages([]);
+      return newChat.id;
+    } catch (err) {
+      setError('Failed to create chat. Please try again.');
+      console.error(err);
+      return null;
+    }
   };
 
   const handleCreateChat = async (): Promise<string> => {
-    const res = await fetch('/api/chats', { method: 'POST' });
-    const newChat = await res.json();
-    setChats((prev) => [newChat, ...prev]);
-    setInitialMessages([]);
-    setActiveChatId(newChat.id);
-    return newChat.id;
+    setError(null);
+    try {
+      const res = await fetch('/api/chats', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to create chat');
+      const newChat = await res.json();
+      setChats((prev) => [newChat, ...prev]);
+      setInitialMessages([]);
+      setActiveChatId(newChat.id);
+      return newChat.id;
+    } catch (err) {
+      setError('Failed to create chat. Please try again.');
+      console.error(err);
+      throw err;
+    }
   };
 
   const handleSelectChat = async (id: string) => {
     setActiveChatId(id);
     setIsLoadingMessages(true);
-    const res = await fetch(`/api/chats/${id}`);
-    const chat: ChatWithMessages = await res.json();
+    setError(null);
+    try {
+      const res = await fetch(`/api/chats/${id}`);
+      if (!res.ok) throw new Error('Failed to load messages');
+      const chat: ChatWithMessages = await res.json();
 
-    const uiMessages: UIMessage[] = chat.messages.map((msg) => ({
-      id: msg.id,
-      role: msg.role as 'user' | 'assistant',
-      parts: [{ type: 'text' as const, text: msg.content }],
-      createdAt: new Date(),
-    }));
+      const uiMessages: UIMessage[] = chat.messages.map((msg) => ({
+        id: msg.id,
+        role: msg.role as 'user' | 'assistant',
+        parts: [{ type: 'text' as const, text: msg.content }],
+        createdAt: new Date(),
+      }));
 
-    setInitialMessages(uiMessages);
-    setIsLoadingMessages(false);
+      setInitialMessages(uiMessages);
+    } catch (err) {
+      setError('Failed to load messages. Please try again.');
+      console.error(err);
+    } finally {
+      setIsLoadingMessages(false);
+    }
   };
 
   const handleDeleteChat = async (id: string) => {
-    await fetch(`/api/chats/${id}`, { method: 'DELETE' });
-    setChats((prev) => prev.filter((c) => c.id !== id));
-    if (activeChatId === id) {
-      setActiveChatId(null);
-      setInitialMessages([]);
+    setDeletingChatId(id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/chats/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete chat');
+      setChats((prev) => prev.filter((c) => c.id !== id));
+      if (activeChatId === id) {
+        setActiveChatId(null);
+        setInitialMessages([]);
+      }
+    } catch (err) {
+      setError('Failed to delete chat. Please try again.');
+      console.error(err);
+    } finally {
+      setDeletingChatId(null);
     }
   };
 
@@ -95,6 +139,9 @@ export default function Home() {
         onSelectChat={handleSelectChat}
         onDeleteChat={handleDeleteChat}
         isLoading={isLoadingChats}
+        deletingChatId={deletingChatId}
+        error={error}
+        onRetry={loadChats}
       />
       <Chat
         key={activeChatId ?? 'new'}
