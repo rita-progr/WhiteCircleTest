@@ -20,6 +20,8 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
   const [localChatId, setLocalChatId] = useState<string | null>(chatId);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
   const pendingMessageRef = useRef<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   // Sync localChatId with prop
   useEffect(() => {
     setLocalChatId(chatId);
@@ -43,6 +45,11 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
   useEffect(() => {
     setMessages(initialMessages);
   }, [initialMessages, setMessages]);
+
+  // Auto-scroll to new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // Send pending message after chat is created
   useEffect(() => {
@@ -116,6 +123,7 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
               </div>
             );
           })}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
