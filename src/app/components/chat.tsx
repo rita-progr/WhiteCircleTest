@@ -152,6 +152,18 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
               </div>
             );
           })}
+          {status === 'submitted' && (
+            <div className="flex justify-start">
+              <div className="flex items-center gap-2 rounded-2xl bg-neutral-900 px-4 py-3">
+                <div className="flex gap-1">
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-neutral-500 [animation-delay:-0.3s]" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-neutral-500 [animation-delay:-0.15s]" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-neutral-500" />
+                </div>
+                <span className="text-sm text-neutral-500">Thinking...</span>
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
       </div>
