@@ -5,6 +5,7 @@ import { DefaultChatTransport } from 'ai';
 import { ArrowUp } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { UIMessage } from 'ai';
+import { ChatMessage } from './chat-message';
 
 interface ChatProps {
   chatId: string | null;
@@ -91,25 +92,34 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
           {messages.length === 0 && (
             <p className="pt-32 text-center text-neutral-500">Start a new conversation</p>
           )}
-          {messages.map((message, index) => (
-            <div
-              key={`${message.id}-${index}`}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+          {messages.map((message, index) => {
+            const messageContent = message.parts
+              .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
+              .map((part) => part.text)
+              .join('');
+
+            const isLastMessage = index === messages.length - 1;
+            const isMessageStreaming = isLastMessage && status === 'streaming';
+
+            return (
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-2 ${
-                  message.role === 'user' ? 'bg-neutral-800' : 'bg-neutral-900'
-                }`}
+                key={`${message.id}-${index}`}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <p className="whitespace-pre-wrap text-sm text-neutral-100">
-                  {message.parts
-                    .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
-                    .map((part) => part.text)
-                    .join('')}
-                </p>
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                    message.role === 'user' ? 'bg-neutral-800' : 'bg-neutral-900'
+                  }`}
+                >
+                  <ChatMessage
+                    content={messageContent}
+                    role={message.role as 'user' | 'assistant'}
+                    isStreaming={isMessageStreaming}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
