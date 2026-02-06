@@ -14,7 +14,7 @@ interface ChatMessageProps {
  */
 function parsePIITags(content: string): TextSegment[] {
   const segments: TextSegment[] = [];
-  const regex = /<pii>(.*?)<\/pii>/gs;
+  const regex = /<pii>([\s\S]*?)<\/pii>/g;
   let lastIndex = 0;
   let match;
 
