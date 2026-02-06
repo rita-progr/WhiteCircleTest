@@ -16,6 +16,7 @@ interface SidebarProps {
   onNewChat: () => void;
   onSelectChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
+  isLoading?: boolean;
 }
 
 export function Sidebar({
@@ -24,6 +25,7 @@ export function Sidebar({
   onNewChat,
   onSelectChat,
   onDeleteChat,
+  isLoading = false,
 }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -58,34 +60,47 @@ export function Sidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto p-2">
-        {chats.map((chat) => (
-          <div
-            key={chat.id}
-            className={cn(
-              'group flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-neutral-800',
-              activeChatId === chat.id && 'bg-neutral-800'
-            )}
-            onClick={() => {
-              onSelectChat(chat.id);
-              setIsOpen(false);
-            }}
-          >
-            <span className="text-neutral-500">*</span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-neutral-200">{chat.title}</p>
-              <p className="text-xs text-neutral-500">{formatTime(chat.updatedAt)}</p>
+        {isLoading ? (
+          // Skeleton loading
+          Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-2 rounded-lg px-3 py-2">
+              <div className="h-4 w-4 animate-pulse rounded bg-neutral-700" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="h-4 w-3/4 animate-pulse rounded bg-neutral-700" />
+                <div className="h-3 w-1/3 animate-pulse rounded bg-neutral-700" />
+              </div>
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDeleteChat(chat.id);
+          ))
+        ) : (
+          chats.map((chat) => (
+            <div
+              key={chat.id}
+              className={cn(
+                'group flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-neutral-800',
+                activeChatId === chat.id && 'bg-neutral-800'
+              )}
+              onClick={() => {
+                onSelectChat(chat.id);
+                setIsOpen(false);
               }}
-              className="rounded p-1 opacity-0 transition-opacity hover:bg-neutral-700 group-hover:opacity-100"
             >
-              <Trash2 className="h-3.5 w-3.5 text-neutral-400" />
-            </button>
-          </div>
-        ))}
+              <span className="text-neutral-500">*</span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-neutral-200">{chat.title}</p>
+                <p className="text-xs text-neutral-500">{formatTime(chat.updatedAt)}</p>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteChat(chat.id);
+                }}
+                className="rounded p-1 opacity-0 transition-opacity hover:bg-neutral-700 group-hover:opacity-100"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-neutral-400" />
+              </button>
+            </div>
+          ))
+        )}
       </div>
     </>
   );

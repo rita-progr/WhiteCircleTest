@@ -4,9 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="720d0aef-cc40-4597-90ac-922a87a39402" name="Changes" comment="phase 2">
+    <list default="true" id="720d0aef-cc40-4597-90ac-922a87a39402" name="Changes" comment="fix pii">
+      <change afterPath="$PROJECT_DIR$/Backlog.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/components/chat-message.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/components/chat-message.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/components/chat.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/components/chat.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/components/sidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/components/sidebar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/components/spoiler.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/components/spoiler.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/page.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -66,7 +73,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1770356480683</updated>
-      <workItem from="1770356481769" duration="17729000" />
+      <workItem from="1770356481769" duration="19312000" />
     </task>
     <task id="LOCAL-00001" summary="init app">
       <option name="closed" value="true" />
@@ -108,7 +115,23 @@
       <option name="project" value="LOCAL" />
       <updated>1770379395709</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="phase 3">
+      <option name="closed" value="true" />
+      <created>1770381563652</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1770381563652</updated>
+    </task>
+    <task id="LOCAL-00007" summary="fix pii">
+      <option name="closed" value="true" />
+      <created>1770381640328</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1770381640328</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -119,6 +142,8 @@
     <MESSAGE value="add skills" />
     <MESSAGE value="phase 1" />
     <MESSAGE value="phase 2" />
-    <option name="LAST_COMMIT_MESSAGE" value="phase 2" />
+    <MESSAGE value="phase 3" />
+    <MESSAGE value="fix pii" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix pii" />
   </component>
 </project>

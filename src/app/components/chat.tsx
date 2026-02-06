@@ -2,7 +2,7 @@
 
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { UIMessage } from 'ai';
 import { ChatMessage } from './chat-message';
@@ -12,15 +12,14 @@ interface ChatProps {
   initialMessages?: UIMessage[];
   onMessageSent?: () => void;
   onCreateChat?: () => Promise<string>;
+  isLoadingMessages?: boolean;
 }
 
-export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat }: ChatProps) {
+export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat, isLoadingMessages = false }: ChatProps) {
   const [input, setInput] = useState('');
   const [localChatId, setLocalChatId] = useState<string | null>(chatId);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
   const pendingMessageRef = useRef<string | null>(null);
-  const prevChatIdRef = useRef<string | null>(null);
-
   // Sync localChatId with prop
   useEffect(() => {
     setLocalChatId(chatId);
@@ -40,13 +39,10 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
     transport,
   });
 
-  // Set initial messages when chatId or initialMessages change
+  // Set initial messages when initialMessages change
   useEffect(() => {
-    if (chatId !== prevChatIdRef.current) {
-      prevChatIdRef.current = chatId;
-      setMessages(initialMessages);
-    }
-  }, [chatId, initialMessages, setMessages]);
+    setMessages(initialMessages);
+  }, [initialMessages, setMessages]);
 
   // Send pending message after chat is created
   useEffect(() => {
@@ -89,10 +85,14 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
     <div className="flex h-screen w-full flex-col bg-neutral-950 md:ml-64">
       <div className="flex-1 overflow-y-auto p-4 pt-16 md:pt-4">
         <div className="mx-auto max-w-2xl space-y-4">
-          {messages.length === 0 && (
+          {isLoadingMessages ? (
+            <div className="flex items-center justify-center pt-32">
+              <Loader2 className="h-8 w-8 animate-spin text-neutral-500" />
+            </div>
+          ) : messages.length === 0 ? (
             <p className="pt-32 text-center text-neutral-500">Start a new conversation</p>
-          )}
-          {messages.map((message, index) => {
+          ) : null}
+          {!isLoadingMessages && messages.map((message, index) => {
             const messageContent = message.parts
               .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
               .map((part) => part.text)

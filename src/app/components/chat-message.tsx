@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { detectPIIInstant, splitTextWithPII, type PIIType } from '@/lib/pii-patterns';
+import { detectPIIInstant, splitTextWithPII } from '@/lib/pii-patterns';
 import { Spoiler } from './spoiler';
 
 interface ChatMessageProps {
@@ -9,13 +9,6 @@ interface ChatMessageProps {
   role: 'user' | 'assistant';
 }
 
-const PII_LABELS: Record<PIIType, string> = {
-  email: 'Email',
-  phone: 'Phone',
-  card: 'Card',
-  ssn: 'SSN',
-  ip: 'IP',
-};
 
 export function ChatMessage({ content, role }: ChatMessageProps) {
   // Only scan assistant messages for PII
@@ -46,10 +39,7 @@ export function ChatMessage({ content, role }: ChatMessageProps) {
       {segments.map((segment, index) => {
         if (segment.type === 'pii') {
           return (
-            <Spoiler
-              key={`pii-${index}-${segment.content.slice(0, 5)}`}
-              label={segment.piiType ? PII_LABELS[segment.piiType] : 'PII'}
-            >
+            <Spoiler key={`pii-${index}-${segment.content.slice(0, 5)}`}>
               {segment.content}
             </Spoiler>
           );

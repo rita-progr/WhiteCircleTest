@@ -23,11 +23,15 @@ export default function Home() {
   const [chats, setChats] = useState<ChatItem[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
+  const [isLoadingChats, setIsLoadingChats] = useState(true);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
   const loadChats = useCallback(async () => {
+    setIsLoadingChats(true);
     const res = await fetch('/api/chats');
     const data = await res.json();
     setChats(data);
+    setIsLoadingChats(false);
   }, []);
 
   useEffect(() => {
@@ -54,6 +58,7 @@ export default function Home() {
 
   const handleSelectChat = async (id: string) => {
     setActiveChatId(id);
+    setIsLoadingMessages(true);
     const res = await fetch(`/api/chats/${id}`);
     const chat: ChatWithMessages = await res.json();
 
@@ -65,6 +70,7 @@ export default function Home() {
     }));
 
     setInitialMessages(uiMessages);
+    setIsLoadingMessages(false);
   };
 
   const handleDeleteChat = async (id: string) => {
@@ -88,6 +94,7 @@ export default function Home() {
         onNewChat={handleNewChat}
         onSelectChat={handleSelectChat}
         onDeleteChat={handleDeleteChat}
+        isLoading={isLoadingChats}
       />
       <Chat
         key={activeChatId ?? 'new'}
@@ -95,6 +102,7 @@ export default function Home() {
         initialMessages={initialMessages}
         onMessageSent={handleMessageSent}
         onCreateChat={handleCreateChat}
+        isLoadingMessages={isLoadingMessages}
       />
     </div>
   );
