@@ -4,13 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="720d0aef-cc40-4597-90ac-922a87a39402" name="Changes" comment="refactor">
-      <change afterPath="$PROJECT_DIR$/BestPracties.md" afterDir="false" />
+    <list default="true" id="720d0aef-cc40-4597-90ac-922a87a39402" name="Changes" comment="add cash">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/CLAUDE.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/components/chat-message.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/components/chat-message.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/components/spoiler.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/components/spoiler.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib/hooks/use-async-pii-detection.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib/hooks/use-async-pii-detection.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -89,7 +84,7 @@
       <updated>1770356480683</updated>
       <workItem from="1770356481769" duration="24593000" />
       <workItem from="1770392354924" duration="2307000" />
-      <workItem from="1770537049375" duration="5114000" />
+      <workItem from="1770537049375" duration="7605000" />
     </task>
     <task id="LOCAL-00001" summary="init app">
       <option name="closed" value="true" />
@@ -227,7 +222,15 @@
       <option name="project" value="LOCAL" />
       <updated>1770385069148</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="add cash">
+      <option name="closed" value="true" />
+      <created>1770615197647</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1770615197647</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -249,6 +252,7 @@
     <MESSAGE value="add saving current chat" />
     <MESSAGE value="refactor code" />
     <MESSAGE value="refactor" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor" />
+    <MESSAGE value="add cash" />
+    <option name="LAST_COMMIT_MESSAGE" value="add cash" />
   </component>
 </project>
