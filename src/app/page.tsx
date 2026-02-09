@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import { Chat } from './components/chat';
 import { Sidebar } from './components/sidebar';
@@ -12,12 +12,15 @@ interface ChatItem {
   updatedAt: string;
 }
 
+interface ChatMessage {
+  id: string;
+  role: string;
+  content: string;
+  piiItems?: string[];
+}
+
 interface ChatWithMessages extends ChatItem {
-  messages: Array<{
-    id: string;
-    role: string;
-    content: string;
-  }>;
+  messages: ChatMessage[];
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => {
@@ -61,6 +64,19 @@ export default function Home() {
       dedupingInterval: 5000,
     }
   );
+
+  // Build piiItems lookup: messageId -> piiItems from DB
+  const piiItemsMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    if (activeChat?.messages) {
+      for (const msg of activeChat.messages) {
+        if (msg.piiItems && Array.isArray(msg.piiItems) && msg.piiItems.length > 0) {
+          map.set(msg.id, msg.piiItems as string[]);
+        }
+      }
+    }
+    return map;
+  }, [activeChat]);
 
   // Update initialMessages when activeChat changes
   useEffect(() => {
@@ -146,8 +162,11 @@ export default function Home() {
   };
 
   const handleMessageSent = () => {
-    // Revalidate chats to update titles
-    setTimeout(() => mutate('/api/chats'), 2000);
+    // Revalidate chats (title) + active chat (piiItems) after server saves
+    setTimeout(() => {
+      mutate('/api/chats');
+      if (activeChatId) mutate(`/api/chats/${activeChatId}`);
+    }, 2000);
   };
 
   const error = chatsError?.message || messagesError?.message || null;
@@ -172,6 +191,7 @@ export default function Home() {
         onMessageSent={handleMessageSent}
         onCreateChat={handleCreateChat}
         isLoadingMessages={isLoadingMessages}
+        piiItemsMap={piiItemsMap}
       />
     </div>
   );

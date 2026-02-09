@@ -37,8 +37,7 @@ WhiteCircleTestProj/
 │   │   ├── layout.tsx
 │   │   └── page.tsx
 │   └── lib/
-│       ├── hooks/
-│       │   └── use-async-pii-detection.ts
+│       ├── detect-pii-server.ts
 │       ├── prisma.ts
 │       ├── pii-patterns.ts
 │       └── utils.ts
@@ -57,7 +56,7 @@ WhiteCircleTestProj/
 ## DB Schema (Prisma)
 
 **Chat:** `id` (cuid), `title` (default "New Chat"), `createdAt`, `updatedAt`, `messages[]`
-**Message:** `id` (cuid), `chatId`, `role`, `content`, `createdAt`; `@@index([chatId])`
+**Message:** `id` (cuid), `chatId`, `role`, `content`, `piiItems` (Json, default `[]`), `createdAt`; `@@index([chatId])`
 Cascade delete: удаление чата удаляет все сообщения (`onDelete: Cascade`).
 
 ---
@@ -126,7 +125,7 @@ Cascade delete: удаление чата удаляет все сообщени
 
 **Рендер одного сообщения с 3-слойной PII-защитой.** Обёрнут в `React.memo` — при стриминге нового сообщения старые N-1 сообщений не перерендериваются.
 
-**Props:** `content: string`, `role: 'user' | 'assistant'`, `isStreaming: boolean`
+**Props:** `content: string`, `role: 'user' | 'assistant'`, `piiItems?: string[]`
 
 **PII Detection Pipeline (только для assistant сообщений):**
 
@@ -140,10 +139,11 @@ Cascade delete: удаление чата удаляет все сообщени
    - Если находит PII — дробит сегмент через `splitTextWithPII()`
    - PII-сегменты из Layer 1 пропускает без изменений
 
-3. **Layer 3 — Async Haiku (`applyAsyncPii`):**
-   - Принимает `asyncPiiItems: string[]` от хука `useAsyncPiiDetection`
+3. **Layer 3 — Server PII (`applyAsyncPii` с `piiItems` из props):**
+   - Получает `piiItems: string[]` из БД (детектировано на сервере при сохранении)
    - Для каждого `text`-сегмента ищет вхождения PII-строк
    - Если находит — разбивает сегмент: ищет самое раннее вхождение, ставит `text` до него, `pii` на него, и продолжает с остатком
+   - Для новых стримящихся сообщений `piiItems` ещё нет — работают только Layer 1-2
 
 **Рендер:**
 - User messages — просто `<p>` с контентом, PII не сканируется
@@ -266,30 +266,24 @@ Params получаются как `Promise<{ id: string }>` (Next.js 14 async p
 
 ---
 
-### 11. Async PII Hook — `src/lib/hooks/use-async-pii-detection.ts`
+### 11. Server-side PII Detection — `src/lib/detect-pii-server.ts`
 
-**Debounced API вызов к Haiku для определения PII.**
+**Серверная PII-детекция, вызывается один раз при сохранении сообщения.**
 
-**Параметры:** `content: string`, `isStreaming: boolean`
+**`detectPIIServer(text: string): Promise<string[]>`:**
+1. **Regex layer:** вызывает `detectPIIInstant()` — мгновенно ловит email, phone, SSN, credit card, IP
+2. **Haiku layer:** вызывает Claude Haiku — семантически находит имена, адреса
+3. Объединяет результаты, дедуплицирует
+4. Возвращает `string[]` — массив найденных PII-текстов
 
-**Two-level cache (survives page reloads):**
-- **L1 (in-memory):** `Map<string, string[]>` — макс. 100 записей, FIFO eviction. Мгновенный доступ без десериализации.
-- **L2 (sessionStorage):** ключи `pii:${djb2hash}`, значения — JSON `string[]`. Макс. 200 ключей. Переживает page reload и HMR.
-- **Lookup:** L1 → L2 (с промоцией в L1) → cache miss → API call
-- **Write:** записывает в L1 + L2 (try/catch на quota exceeded)
-- Проверяется ДО debounce (мгновенный результат) и ПОСЛЕ debounce (другой инстанс мог закэшировать)
+**Где вызывается:**
+- В `onFinish` callback `POST /api/chat` — после завершения стрима Claude
+- Результат сохраняется в `Message.piiItems` (Json поле в БД)
+- Клиент получает `piiItems` вместе с сообщением при загрузке чата — 0 API вызовов для PII
 
-**Логика:**
-- Сначала проверяет `content === lastCheckedContentRef.current` — пропускает если текст не изменился
-- Проверяет кэш — если есть, сразу возвращает результат без API вызова
-- Не запускает проверку, если текст изменился менее чем на 20 символов (во время стриминга)
-- Debounce: **200ms** при стриминге, **100ms** после окончания
-- `lastCheckedContentRef` — ref с последним проверенным текстом (не вызывает re-render)
-- POST `/api/detect-pii` с `{ text: content }`
-- Извлекает `piiItems[].text` в массив строк, сохраняет в кэш
-- Cleanup: clearTimeout при unmount
-
-**Возвращает:** `{ asyncPiiItems: string[], isScanning: boolean }`
+**Отличие от предыдущей архитектуры:**
+- Раньше: каждый клиент отдельно вызывал `/api/detect-pii` для каждого сообщения
+- Теперь: PII детектится ОДИН РАЗ на сервере при создании сообщения, результат хранится в БД навсегда
 
 ---
 
@@ -311,7 +305,7 @@ Params получаются как `Promise<{ id: string }>` (Next.js 14 async p
 | Active chat ID | `page.tsx` | `useState` + `localStorage` |
 | Streaming messages | `chat.tsx` | `useChat()` (AI SDK) |
 | Input text | `chat.tsx` | `useState` |
-| PII results (async) | `chat-message.tsx` | `useAsyncPiiDetection` hook |
+| PII results (server) | `page.tsx` → `chat.tsx` → `chat-message.tsx` | `piiItemsMap` from SWR data |
 | PII results (regex) | `chat-message.tsx` | `useMemo` (synchronous) |
 | Sidebar open/close | `sidebar.tsx` | `useState` |
 | Deleting chat UI | `page.tsx` | `useState` (deletingChatId) |

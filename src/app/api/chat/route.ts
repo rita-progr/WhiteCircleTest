@@ -1,6 +1,7 @@
 import { anthropic } from '@ai-sdk/anthropic';
 import { convertToModelMessages, generateText, streamText, type UIMessage } from 'ai';
 import { prisma } from '@/lib/prisma';
+import { detectPIIServer } from '@/lib/detect-pii-server';
 
 export async function POST(req: Request) {
   const { messages, chatId }: { messages: UIMessage[]; chatId?: string } = await req.json();
@@ -33,10 +34,13 @@ export async function POST(req: Request) {
           })
           .join('');
 
+        // Detect PII once on server — result stored in DB
+        const piiItems = assistantContent ? await detectPIIServer(assistantContent) : [];
+
         await prisma.message.createMany({
           data: [
             { chatId, role: 'user', content: userContent },
-            { chatId, role: 'assistant', content: assistantContent },
+            { chatId, role: 'assistant', content: assistantContent, piiItems },
           ],
         });
 

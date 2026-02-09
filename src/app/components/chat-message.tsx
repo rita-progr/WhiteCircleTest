@@ -2,13 +2,12 @@
 
 import { memo, useMemo } from 'react';
 import { detectPIIInstant, splitTextWithPII, type TextSegment } from '@/lib/pii-patterns';
-import { useAsyncPiiDetection } from '@/lib/hooks/use-async-pii-detection';
 import { Spoiler } from './spoiler';
 
 interface ChatMessageProps {
   content: string;
   role: 'user' | 'assistant';
-  isStreaming?: boolean;
+  piiItems?: string[];
 }
 
 /**
@@ -123,30 +122,28 @@ function applyAsyncPii(segments: TextSegment[], asyncPiiItems: string[]): TextSe
   return result;
 }
 
-export const ChatMessage = memo(function ChatMessage({ content, role, isStreaming = false }: ChatMessageProps) {
+export const ChatMessage = memo(function ChatMessage({ content, role, piiItems }: ChatMessageProps) {
   // Only scan assistant messages for PII
   const shouldScan = role === 'assistant';
-
-  // Async PII detection with Haiku (runs in parallel)
-  const { asyncPiiItems } = useAsyncPiiDetection(
-    shouldScan ? content : '',
-    isStreaming
-  );
 
   const segments = useMemo(() => {
     if (!shouldScan || !content) {
       return [{ type: 'text' as const, content }];
     }
 
-    // First: parse LLM-tagged PII
+    // Layer 1: parse LLM-tagged PII
     const taggedSegments = parsePIITags(content);
 
-    // Second: apply regex fallback for any missed PII
+    // Layer 2: regex fallback for any missed PII
     const withRegex = applyRegexFallback(taggedSegments);
 
-    // Third: apply async Haiku detection results
-    return applyAsyncPii(withRegex, asyncPiiItems);
-  }, [content, shouldScan, asyncPiiItems]);
+    // Layer 3: apply server-provided PII items (from DB)
+    if (piiItems && piiItems.length > 0) {
+      return applyAsyncPii(withRegex, piiItems);
+    }
+
+    return withRegex;
+  }, [content, shouldScan, piiItems]);
 
   // For user messages, just render the content directly
   if (!shouldScan) {

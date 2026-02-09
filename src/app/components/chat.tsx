@@ -13,9 +13,10 @@ interface ChatProps {
   onMessageSent?: () => void;
   onCreateChat?: () => Promise<string>;
   isLoadingMessages?: boolean;
+  piiItemsMap?: Map<string, string[]>;
 }
 
-export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat, isLoadingMessages = false }: ChatProps) {
+export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat, isLoadingMessages = false, piiItemsMap }: ChatProps) {
   const [input, setInput] = useState('');
   const [localChatId, setLocalChatId] = useState<string | null>(chatId);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
@@ -134,12 +135,6 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
               .map((part) => part.text)
               .join('');
 
-            // Check if this is the last assistant message and still streaming
-            const isLastAssistantMessage =
-              message.role === 'assistant' &&
-              index === messages.length - 1;
-            const isMessageStreaming = isLastAssistantMessage && status === 'streaming';
-
             return (
               <div
                 key={`${message.id}-${index}`}
@@ -153,7 +148,7 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
                   <ChatMessage
                     content={messageContent}
                     role={message.role as 'user' | 'assistant'}
-                    isStreaming={isMessageStreaming}
+                    piiItems={piiItemsMap?.get(message.id)}
                   />
                 </div>
               </div>
