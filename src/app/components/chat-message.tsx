@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { detectPIIInstant, splitTextWithPII, type TextSegment } from '@/lib/pii-patterns';
 import { useAsyncPiiDetection } from '@/lib/hooks/use-async-pii-detection';
 import { Spoiler } from './spoiler';
@@ -123,7 +123,7 @@ function applyAsyncPii(segments: TextSegment[], asyncPiiItems: string[]): TextSe
   return result;
 }
 
-export function ChatMessage({ content, role, isStreaming = false }: ChatMessageProps) {
+export const ChatMessage = memo(function ChatMessage({ content, role, isStreaming = false }: ChatMessageProps) {
   // Only scan assistant messages for PII
   const shouldScan = role === 'assistant';
 
@@ -138,8 +138,6 @@ export function ChatMessage({ content, role, isStreaming = false }: ChatMessageP
       return [{ type: 'text' as const, content }];
     }
 
-    console.log('🎯 ChatMessage asyncPiiItems:', asyncPiiItems);
-
     // First: parse LLM-tagged PII
     const taggedSegments = parsePIITags(content);
 
@@ -147,9 +145,7 @@ export function ChatMessage({ content, role, isStreaming = false }: ChatMessageP
     const withRegex = applyRegexFallback(taggedSegments);
 
     // Third: apply async Haiku detection results
-    const final = applyAsyncPii(withRegex, asyncPiiItems);
-    console.log('🎯 Final segments:', final);
-    return final;
+    return applyAsyncPii(withRegex, asyncPiiItems);
   }, [content, shouldScan, asyncPiiItems]);
 
   // For user messages, just render the content directly
@@ -161,13 +157,18 @@ export function ChatMessage({ content, role, isStreaming = false }: ChatMessageP
     );
   }
 
+  // Build stable keys: track duplicate PII content with counters
+  const piiCounters = new Map<string, number>();
+
   // For assistant messages, render with PII protection
   return (
     <p className="whitespace-pre-wrap text-sm text-neutral-100">
       {segments.map((segment, index) => {
         if (segment.type === 'pii') {
+          const count = piiCounters.get(segment.content) ?? 0;
+          piiCounters.set(segment.content, count + 1);
           return (
-            <Spoiler key={`pii-${index}-${segment.content.slice(0, 5)}`}>
+            <Spoiler key={`pii-${segment.content}-${count}`}>
               {segment.content}
             </Spoiler>
           );
@@ -176,4 +177,4 @@ export function ChatMessage({ content, role, isStreaming = false }: ChatMessageP
       })}
     </p>
   );
-}
+});
