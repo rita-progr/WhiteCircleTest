@@ -2,11 +2,13 @@
 
 import { memo, useMemo } from 'react';
 import { detectPIIInstant, splitTextWithPII, type TextSegment } from '@/lib/pii-patterns';
+import { useAsyncPiiDetection } from '@/lib/hooks/use-async-pii-detection';
 import { Spoiler } from './spoiler';
 
 interface ChatMessageProps {
   content: string;
   role: 'user' | 'assistant';
+  isStreaming?: boolean;
   piiItems?: string[];
 }
 
@@ -122,9 +124,22 @@ function applyAsyncPii(segments: TextSegment[], asyncPiiItems: string[]): TextSe
   return result;
 }
 
-export const ChatMessage = memo(function ChatMessage({ content, role, piiItems }: ChatMessageProps) {
+export const ChatMessage = memo(function ChatMessage({ content, role, isStreaming = false, piiItems }: ChatMessageProps) {
   // Only scan assistant messages for PII
   const shouldScan = role === 'assistant';
+
+  // Async PII detection via Haiku — runs DURING streaming (calls POST /api/detect-pii)
+  const { asyncPiiItems } = useAsyncPiiDetection(
+    shouldScan ? content : '',
+    isStreaming
+  );
+
+  // Merge: server piiItems (from DB) + async piiItems (from streaming detection)
+  const allPiiItems = useMemo(() => {
+    if (!piiItems?.length && !asyncPiiItems.length) return [];
+    const merged = (piiItems || []).concat(asyncPiiItems);
+    return merged.filter((item, i) => merged.indexOf(item) === i);
+  }, [piiItems, asyncPiiItems]);
 
   const segments = useMemo(() => {
     if (!shouldScan || !content) {
@@ -137,13 +152,13 @@ export const ChatMessage = memo(function ChatMessage({ content, role, piiItems }
     // Layer 2: regex fallback for any missed PII
     const withRegex = applyRegexFallback(taggedSegments);
 
-    // Layer 3: apply server-provided PII items (from DB)
-    if (piiItems && piiItems.length > 0) {
-      return applyAsyncPii(withRegex, piiItems);
+    // Layer 3: apply PII items (from DB + async Haiku detection)
+    if (allPiiItems.length > 0) {
+      return applyAsyncPii(withRegex, allPiiItems);
     }
 
     return withRegex;
-  }, [content, shouldScan, piiItems]);
+  }, [content, shouldScan, allPiiItems]);
 
   // For user messages, just render the content directly
   if (!shouldScan) {

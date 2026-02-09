@@ -37,6 +37,8 @@ WhiteCircleTestProj/
 │   │   ├── layout.tsx
 │   │   └── page.tsx
 │   └── lib/
+│       ├── hooks/
+│       │   └── use-async-pii-detection.ts
 │       ├── detect-pii-server.ts
 │       ├── prisma.ts
 │       ├── pii-patterns.ts
@@ -125,7 +127,7 @@ Cascade delete: удаление чата удаляет все сообщени
 
 **Рендер одного сообщения с 3-слойной PII-защитой.** Обёрнут в `React.memo` — при стриминге нового сообщения старые N-1 сообщений не перерендериваются.
 
-**Props:** `content: string`, `role: 'user' | 'assistant'`, `piiItems?: string[]`
+**Props:** `content: string`, `role: 'user' | 'assistant'`, `isStreaming?: boolean`, `piiItems?: string[]`
 
 **PII Detection Pipeline (только для assistant сообщений):**
 
@@ -139,11 +141,11 @@ Cascade delete: удаление чата удаляет все сообщени
    - Если находит PII — дробит сегмент через `splitTextWithPII()`
    - PII-сегменты из Layer 1 пропускает без изменений
 
-3. **Layer 3 — Server PII (`applyAsyncPii` с `piiItems` из props):**
-   - Получает `piiItems: string[]` из БД (детектировано на сервере при сохранении)
-   - Для каждого `text`-сегмента ищет вхождения PII-строк
-   - Если находит — разбивает сегмент: ищет самое раннее вхождение, ставит `text` до него, `pii` на него, и продолжает с остатком
-   - Для новых стримящихся сообщений `piiItems` ещё нет — работают только Layer 1-2
+3. **Layer 3 — Async Haiku + Server PII (`applyAsyncPii`):**
+   - **Во время стриминга:** `useAsyncPiiDetection` хук вызывает `POST /api/detect-pii` (debounced, 200ms при стриме, 100ms после). Результаты кэшируются в L1 (Map) + L2 (sessionStorage)
+   - **Для сохранённых сообщений:** `piiItems` из БД (детектировано `detectPIIServer()` в onFinish)
+   - Оба источника мержатся и дедуплицируются в ChatMessage
+   - Для каждого `text`-сегмента ищет вхождения PII-строк, разбивает на sub-сегменты
 
 **Рендер:**
 - User messages — просто `<p>` с контентом, PII не сканируется

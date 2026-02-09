@@ -37,10 +37,13 @@ export async function POST(req: Request) {
         // Detect PII once on server — result stored in DB
         const piiItems = assistantContent ? await detectPIIServer(assistantContent) : [];
 
+        const now = new Date();
+        const userTimestamp = new Date(now.getTime() - 1);
+
         await prisma.message.createMany({
           data: [
-            { chatId, role: 'user', content: userContent },
-            { chatId, role: 'assistant', content: assistantContent, piiItems },
+            { chatId, role: 'user', content: userContent, createdAt: userTimestamp },
+            { chatId, role: 'assistant', content: assistantContent, piiItems, createdAt: now },
           ],
         });
 

@@ -135,6 +135,10 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
               .map((part) => part.text)
               .join('');
 
+            const isLastAssistant =
+              message.role === 'assistant' && index === messages.length - 1;
+            const isMessageStreaming = isLastAssistant && status === 'streaming';
+
             return (
               <div
                 key={`${message.id}-${index}`}
@@ -148,6 +152,7 @@ export function Chat({ chatId, initialMessages = [], onMessageSent, onCreateChat
                   <ChatMessage
                     content={messageContent}
                     role={message.role as 'user' | 'assistant'}
+                    isStreaming={isMessageStreaming}
                     piiItems={piiItemsMap?.get(message.id)}
                   />
                 </div>
